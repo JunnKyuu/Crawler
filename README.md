@@ -1,25 +1,34 @@
-# Google Maps Restaurant & Review Crawler
+# Google Maps Restaurant & Review Crawler (Grid-Based)
 
-구글 맵에서 식당 정보와 리뷰를 자동으로 수집하는 크롤러입니다.
+뉴욕시 59개 커뮤니티 그리드별로 식당 정보와 리뷰를 자동 수집하는 크롤러입니다.
 
 ## 목차
 
-- [기능](#기능)
+- [주요 특징](#주요-특징)
 - [프로젝트 구조](#프로젝트-구조)
 - [설치](#설치)
 - [사용법](#사용법)
-  - [방법 1: 전체 파이프라인 실행 (권장)](#방법-1-전체-파이프라인-실행-권장)
-  - [방법 2: 개별 스크립트 실행](#방법-2-개별-스크립트-실행)
-  - [방법 3: 지구별 자동 수집 (뉴욕시)](#방법-3-지구별-자동-수집-뉴욕시)
+  - [빠른 시작](#빠른-시작)
+  - [팀원별 작업 분할](#팀원별-작업-분할)
+  - [개별 스크립트 실행](#개별-스크립트-실행)
 - [파일 형식](#파일-형식)
 - [주의사항](#주의사항)
 
-## 기능
+## 주요 특징
+
+### 그리드 기반 자동화 파이프라인 (main.py)
+- **gridInfo.txt 기반 자동 수집**: 뉴욕시 59개 커뮤니티 그리드별 자동 처리
+- **그리드별 완전 수집**: 각 그리드마다 레스토랑 정보 수집 → 즉시 리뷰 수집
+- **팀원별 작업 분할**: `--start_from`, `--limit` 옵션으로 작업을 나눠서 병렬 실행 가능
+- **중간 저장**: 레스토랑 수집 완료, 식당별 리뷰 수집 완료 시마다 즉시 저장 (오류 발생 시에도 데이터 보존)
+- **개별 파일 저장**: 각 레스토랑의 리뷰를 개별 JSON 파일로 저장
+- **자동 로그 기록**: 전체 실행 결과를 pipeline_log.json에 자동 저장
 
 ### 식당 정보 수집 (getRestaurantsInfo.py)
 - Google Places API를 사용하여 식당 정보 수집
 - 이름, 주소, place_id, 평점, 리뷰 수, 전화번호 수집
 - 검색 쿼리 기반 식당 검색
+- 그리드별 자동 쿼리 생성 및 저장
 
 ### 리뷰 수집 (getReviews.py)
 - Selenium을 이용한 동적 크롤링
@@ -27,38 +36,34 @@
 - 자동으로 "자세히", "원문보기" 버튼 클릭하여 전체 리뷰 내용 수집
 - 스크롤을 통한 동적 로딩으로 모든 리뷰 수집
 - 최신순 정렬로 리뷰 수집
-- 식당별로 정리된 JSON 형식으로 결과 저장
-
-### 통합 파이프라인 (main.py)
-- 식당 정보 수집부터 리뷰 수집까지 전체 프로세스 자동화
-- 단계별 진행 상황 표시
-- 특정 단계만 선택적으로 실행 가능
-
-### 지구별 자동 수집 (collect_restaurants_by_grid.py)
-- gridInfo 파일을 읽어 각 지구별로 자동 수집
-- 뉴욕시 59개 커뮤니티 지구별 식당 정보 수집
-- 각 지구별로 restaurants_{지구코드}.json 파일 생성 (예: restaurants_MN1.json)
-- 진행 상황 표시 및 상세 로그 기록
-- 중단 시 재개 기능
+- **식당별 개별 파일 저장**: {그리드코드}_{식당명}_reviews.json 형식
+- 오류 발생 시에도 오류 정보 저장
 
 ## 프로젝트 구조
 
 ```
-review-crawler/
-├── main.py                           # 전체 파이프라인 통합 스크립트
-├── collect_restaurants_by_grid.py    # 지구별 자동 수집 스크립트 (NEW!)
-├── getRestaurantsInfo.py             # 식당 정보 수집 스크립트
-├── getReviews.py                     # 리뷰 수집 스크립트
+Crawler/
+├── main.py                           # 그리드 기반 전체 파이프라인 (메인 스크립트)
+├── getRestaurantsInfo.py             # 식당 정보 수집 유틸리티
+├── getReviews.py                     # 리뷰 수집 유틸리티
+├── collect_restaurants_by_grid.py    # (사용 안 함, main.py가 대체)
 ├── config.py                         # API 키 설정
 ├── requirements.txt                  # 필수 패키지 목록
 ├── .env                              # 환경 변수 (API 키 저장)
-├── girdInfo.txt                      # 뉴욕시 지구 정보 (입력)
-├── restaurants.json                  # 수집된 식당 정보 (출력)
-├── restaurants_MN1.json              # 지구별 식당 정보 (출력)
-├── reviews.json                      # 수집된 리뷰 데이터 (출력)
-├── collection_log.json               # 수집 로그 (출력)
-├── make.txt                          # 프로젝트 요구사항 문서
-└── value.txt                         # HTML 구조 참조 문서
+├── girdInfo.txt                      # 뉴욕시 59개 그리드 정보 (입력)
+│
+├── restaurants/                      # 그리드별 레스토랑 정보 (출력)
+│   ├── restaurants_MN1.json          # 맨해튼 1지구 레스토랑 정보
+│   ├── restaurants_MN2.json          # 맨해튼 2지구 레스토랑 정보
+│   ├── restaurants_BX1.json          # 브롱스 1지구 레스토랑 정보
+│   ├── ...                           # (총 59개 파일)
+│   └── pipeline_log.json             # 전체 실행 로그
+│
+└── reviews/                          # 레스토랑별 리뷰 정보 (출력)
+    ├── MN1_Gramercy Tavern_reviews.json
+    ├── MN1_The Smith_reviews.json
+    ├── MN2_Balthazar_reviews.json
+    └── ...                           # (레스토랑 개수만큼 파일 생성)
 ```
 
 ## 설치
@@ -97,48 +102,71 @@ Selenium은 Chrome 브라우저를 제어하기 위해 ChromeDriver가 필요합
 
 ## 사용법
 
-### 방법 1: 전체 파이프라인 실행 (권장)
+### 빠른 시작
 
-`main.py`를 사용하면 식당 정보 수집부터 리뷰 수집까지 한 번에 실행할 수 있습니다.
-
-#### 기본 사용
+#### 테스트 실행 (첫 1개 그리드만)
 
 ```bash
-python main.py --query "restaurants in Seoul"
+python main.py --grid_file girdInfo.txt --limit 1 --max_restaurants 10 --max_reviews 20
 ```
 
-#### 상세 옵션 사용
+이 명령은:
+- 첫 번째 그리드(MN1)만 처리
+- 그리드당 최대 10개 레스토랑 수집
+- 레스토랑당 최대 20개 리뷰 수집
+- 결과는 `restaurants/`와 `reviews/` 디렉토리에 저장
+
+#### 전체 그리드 실행 (59개 그리드)
 
 ```bash
-python main.py --query "restaurants in Myeongdong" --max_restaurants 20 --max_reviews 50 --headless
+python main.py --grid_file girdInfo.txt --max_restaurants 30 --max_reviews 50 --headless
 ```
 
-#### 특정 단계만 실행
+이 명령은:
+- 뉴욕시 59개 그리드 전체 처리
+- 그리드당 최대 30개 레스토랑 수집
+- 레스토랑당 최대 50개 리뷰 수집
+- 백그라운드 모드로 실행 (브라우저 창 숨김)
 
-리뷰만 수집 (restaurants.json이 이미 있는 경우):
+### 팀원별 작업 분할
+
+59개 그리드를 3명의 팀원이 나눠서 동시에 처리하는 예시:
+
+#### 팀원 1: 그리드 0~19 (20개)
+
 ```bash
-python main.py --skip-restaurants --max_reviews 100 --headless
+python main.py --grid_file girdInfo.txt --start_from 0 --limit 20 --max_restaurants 30 --max_reviews 50 --headless
 ```
 
-식당 정보만 수집:
+#### 팀원 2: 그리드 20~39 (20개)
+
 ```bash
-python main.py --query "sushi in Gangnam" --skip-reviews
+python main.py --grid_file girdInfo.txt --start_from 20 --limit 20 --max_restaurants 30 --max_reviews 50 --headless
 ```
 
-#### main.py 명령어 파라미터
+#### 팀원 3: 그리드 40~58 (19개)
+
+```bash
+python main.py --grid_file girdInfo.txt --start_from 40 --limit 19 --max_restaurants 30 --max_reviews 50 --headless
+```
+
+### main.py 명령어 파라미터
 
 | 파라미터 | 설명 | 기본값 | 예시 |
 |---------|------|--------|------|
-| `--query` | 검색 쿼리 | 필수 | `--query "restaurants in Seoul"` |
-| `--max_restaurants` | 최대 식당 수 | 30 | `--max_restaurants 20` |
-| `--max_reviews` | 식당당 최대 리뷰 수 | 제한 없음 | `--max_reviews 50` |
+| `--grid_file` | Grid 정보 파일 경로 | girdInfo.txt | `--grid_file my_grid.txt` |
+| `--start_from` | 시작 그리드 인덱스 | 0 | `--start_from 20` |
+| `--limit` | 처리할 그리드 수 | 전체 | `--limit 20` |
+| `--max_restaurants` | 그리드당 최대 레스토랑 수 | 30 | `--max_restaurants 50` |
+| `--max_reviews` | 레스토랑당 최대 리뷰 수 | 제한 없음 | `--max_reviews 100` |
 | `--headless` | 백그라운드 실행 | False | `--headless` |
-| `--restaurants_output` | 식당 정보 출력 파일 | restaurants.json | `--restaurants_output data.json` |
-| `--reviews_output` | 리뷰 출력 파일 | reviews.json | `--reviews_output reviews_data.json` |
-| `--skip-restaurants` | 식당 정보 수집 건너뛰기 | False | `--skip-restaurants` |
-| `--skip-reviews` | 리뷰 수집 건너뛰기 | False | `--skip-reviews` |
+| `--restaurants_dir` | 레스토랑 정보 출력 디렉토리 | restaurants | `--restaurants_dir ./data/rest` |
+| `--reviews_dir` | 리뷰 출력 디렉토리 | reviews | `--reviews_dir ./data/rev` |
+| `--delay` | 그리드 처리 간 대기 시간(초) | 2.0 | `--delay 3.0` |
 
-### 방법 2: 개별 스크립트 실행
+### 개별 스크립트 실행
+
+일반적으로는 main.py를 사용하는 것을 권장하지만, 필요한 경우 개별 스크립트를 직접 실행할 수도 있습니다.
 
 #### 2-1. 식당 정보 수집 (getRestaurantsInfo.py)
 
@@ -161,175 +189,158 @@ python getRestaurantsInfo.py --query "korean food" --output my_restaurants.json
 #### 2-2. 리뷰 수집 (getReviews.py)
 
 ```bash
-# 기본 사용
-python getReviews.py
-
-# 최대 리뷰 개수 제한
-python getReviews.py --max_reviews 10
+# 특정 그리드의 레스토랑 리뷰 수집
+python getReviews.py --input restaurants/restaurants_MN1.json --output_dir reviews --max_reviews 50 --headless
 
 # 백그라운드 실행
-python getReviews.py --headless
-
-# 입력/출력 파일 지정
-python getReviews.py --input restaurants/restaurants_MN1.json --output MN1_reviews.json --max_reviews 100
-
-# 모든 옵션 조합
-python getReviews.py --max_reviews 50 --headless --input restaurants.json --output reviews.json
+python getReviews.py --input restaurants/restaurants_BX1.json --output_dir reviews --headless
 ```
 
 **파라미터:**
-- `--max_reviews`: 식당당 최대 리뷰 수 (기본값: 제한 없음)
-- `--headless`: 백그라운드 실행
 - `--input`: 입력 파일 경로 (기본값: restaurants.json)
-- `--output`: 출력 파일 경로 (기본값: reviews.json)
+- `--output_dir`: 출력 디렉토리 (기본값: reviews)
+- `--max_reviews`: 레스토랑당 최대 리뷰 수 (기본값: 제한 없음)
+- `--headless`: 백그라운드 실행
 
-### 방법 3: 지구별 자동 수집 (뉴욕시)
+**참고**: getReviews.py는 각 레스토랑의 리뷰를 `{그리드코드}_{레스토랑명}_reviews.json` 형식의 개별 파일로 저장합니다.
 
-`collect_restaurants_by_grid.py`를 사용하면 뉴욕시 59개 커뮤니티 지구의 식당 정보를 자동으로 수집할 수 있습니다.
+## 파일 형식
 
-#### 기본 사용
+### 입력 파일: girdInfo.txt
 
-```bash
-# 기본 사용 (girdInfo.txt 사용, 지구당 30개씩)
-python collect_restaurants_by_grid.py
+뉴욕시 59개 커뮤니티 그리드 정보:
 
-# 지구당 최대 식당 수 지정
-python collect_restaurants_by_grid.py --max_results 50
-
-# 출력 디렉토리 지정
-python collect_restaurants_by_grid.py --output_dir ./ny_restaurants
-```
-
-#### 고급 옵션
-
-```bash
-# 처음 5개 지구만 테스트
-python collect_restaurants_by_grid.py --limit 5
-
-# 10번째 지구부터 재개 (중단된 경우)
-python collect_restaurants_by_grid.py --start_from 10
-
-# API 제한 회피를 위한 대기 시간 조정
-python collect_restaurants_by_grid.py --delay 2.0
-
-# 다른 gridInfo 파일 사용
-python collect_restaurants_by_grid.py --grid_file my_grid_info.txt
-```
-
-#### 파라미터
-
-| 파라미터 | 설명 | 기본값 | 예시 |
-|---------|------|--------|------|
-| `--grid_file` | gridInfo 파일 경로 | girdInfo.txt | `--grid_file my_grid.txt` |
-| `--max_results` | 지구당 최대 식당 수 | 30 | `--max_results 50` |
-| `--output_dir` | 출력 디렉토리 | . (현재 디렉토리) | `--output_dir ./data` |
-| `--start_from` | 시작 지구 인덱스 | 0 | `--start_from 10` |
-| `--limit` | 처리할 지구 수 제한 | None (전체) | `--limit 5` |
-| `--delay` | 요청 사이 대기 시간(초) | 1.0 | `--delay 2.0` |
-
-#### 출력 파일
-
-- `restaurants_MN1.json` - 맨해튼 1지구 식당 정보
-- `restaurants_MN2.json` - 맨해튼 2지구 식당 정보
-- `restaurants_BX1.json` - 브롱스 1지구 식당 정보
-- ... (총 59개 파일)
-- `collection_log.json` - 수집 로그 및 통계
-
-#### gridInfo 파일 형식
-
-gridInfo 파일은 다음과 같은 형식이어야 합니다:
-
-```
-지구코드,"한국어 지역명 (영문 지역명)"
-```
-
-예시:
 ```
 MN 1,"트라이베카, 금융 지구 (Tribeca, Financial District)"
 MN 2,"그리니치 빌리지, 소호, 차이나타운 (Greenwich Village, SoHo, Chinatown)"
 BX 1,"모트 헤이븐, 멜로즈 (Mott Haven, Melrose)"
+...
 ```
 
-프로젝트에 포함된 `girdInfo.txt` 파일에는 뉴욕시 59개 커뮤니티 지구 정보가 들어있습니다.
+형식: `지구코드,"한국어 지역명 (영문 지역명)"`
 
-## 파일 형식
+### 출력 파일 1: restaurants/{CODE}.json
 
-### 입력 파일: restaurants.json
-
-`restaurants.json` 파일은 다음과 같은 형식이어야 합니다:
+각 그리드별 레스토랑 정보 (예: `restaurants/restaurants_MN1.json`):
 
 ```json
 [
     {
-        "name": "식당 이름",
-        "address": "주소",
+        "name": "Gramercy Tavern",
+        "address": "42 E 20th St, New York, NY 10003",
         "place_id": "ChIJxxxxxx",
-        "rating": 4.5,
-        "user_ratings_total": 100,
-        "phone_number": "02-1234-5678"
-    }
+        "rating": 4.6,
+        "user_ratings_total": 3245,
+        "phone_number": "(212) 477-0777"
+    },
+    ...
 ]
 ```
 
-### 출력 파일: reviews.json
+### 출력 파일 2: reviews/{CODE}_{name}_reviews.json
 
-`reviews.json` 파일은 다음과 같은 형식으로 생성됩니다:
+각 레스토랑별 리뷰 정보 (예: `reviews/MN1_Gramercy Tavern_reviews.json`):
 
 ```json
 {
-    "ChIJxxxxxx": {
-        "name": "식당 이름",
-        "place_id": "ChIJxxxxxx",
-        "address": "주소",
-        "rating": 4.5,
-        "user_ratings_total": 100,
-        "phone_number": "02-1234-5678",
-        "reviews_count": 50,
-        "reviews": [
-            {
-                "rating": 5,
-                "date": "3주 전",
-                "text": "리뷰 내용...",
-                "language": "ko"
-            }
-        ]
-    }
+    "name": "Gramercy Tavern",
+    "place_id": "ChIJxxxxxx",
+    "grid": "MN1",
+    "address": "42 E 20th St, New York, NY 10003",
+    "rating": 4.6,
+    "user_ratings_total": 3245,
+    "phone_number": "(212) 477-0777",
+    "reviews_count": 50,
+    "reviews": [
+        {
+            "rating": 5,
+            "date": "3주 전",
+            "text": "Amazing food and service...",
+            "language": "en"
+        },
+        {
+            "rating": 4,
+            "date": "1개월 전",
+            "text": "정말 맛있었어요...",
+            "language": "ko"
+        }
+    ]
+}
+```
+
+### 출력 파일 3: restaurants/pipeline_log.json
+
+전체 파이프라인 실행 로그:
+
+```json
+{
+    "timestamp": "2025-01-15 14:30:45",
+    "total_grids": 20,
+    "success_count": 19,
+    "total_restaurants": 570,
+    "total_reviews": 28500,
+    "elapsed_seconds": 7200.5,
+    "results": [
+        {
+            "code": "MN1",
+            "restaurants_success": true,
+            "reviews_success": true,
+            "restaurant_count": 30,
+            "review_count": 1500
+        }
+    ]
 }
 ```
 
 ## 작동 방식
 
-### 전체 파이프라인 (main.py)
+### 그리드 기반 파이프라인 (main.py)
 
-1. **Step 1: 식당 정보 수집**
-   - Google Places API를 사용하여 검색 쿼리 기반 식당 검색
-   - 각 식당의 상세 정보 수집 (name, address, place_id, rating, user_ratings_total, phone_number)
-   - `restaurants.json` 파일로 저장
+1. **gridInfo 파싱**
+   - `girdInfo.txt` 파일을 읽어 59개 그리드 정보 파싱
+   - `--start_from`, `--limit` 옵션에 따라 처리할 그리드 범위 결정
 
-2. **Step 2: 리뷰 수집**
-   - `restaurants.json` 파일에서 식당 정보 읽기
-   - 각 식당의 `place_id`를 사용하여 구글 맵 URL 생성
-   - Selenium으로 브라우저 자동화:
-     - 식당 페이지 접속
-     - 리뷰 탭 클릭
-     - 최신순 정렬
-     - 스크롤하며 리뷰 로드
-     - "자세히", "원문보기" 버튼 자동 클릭
-     - 리뷰 데이터 수집 (별점, 날짜, 텍스트, 언어)
-   - 수집된 리뷰를 `reviews.json` 파일로 저장
+2. **각 그리드별 처리 (순차적)**
+   - **Step 1: 레스토랑 정보 수집**
+     - Google Places API로 그리드별 검색 쿼리 생성 (예: "restaurants in Tribeca New York")
+     - 그리드별 레스토랑 정보를 `restaurants/restaurants_{CODE}.json`에 **즉시 저장**
 
-3. **결과 요약**
-   - 총 식당 수, 리뷰 수 등 통계 표시
-   - 소요 시간 및 생성된 파일 정보 출력
+   - **Step 2: 리뷰 수집**
+     - 방금 수집한 레스토랑 파일을 읽어 각 레스토랑의 리뷰 크롤링
+     - Selenium으로 브라우저 자동화:
+       - 리뷰 탭 클릭 → 최신순 정렬 → 스크롤 → "자세히", "원문보기" 클릭
+     - 각 레스토랑의 리뷰를 `reviews/{CODE}_{name}_reviews.json`에 **즉시 저장**
+
+3. **오류 처리**
+   - 레스토랑 수집 실패 시: 해당 그리드의 리뷰 수집 건너뜀
+   - 리뷰 수집 실패 시: 오류 정보를 JSON 파일로 저장하고 다음 레스토랑 진행
+
+4. **최종 요약**
+   - 처리된 그리드 수, 성공/실패 통계
+   - 총 레스토랑 수, 총 리뷰 수
+   - 실행 로그를 `restaurants/pipeline_log.json`에 저장
 
 ## 주의사항
 
-- **Google Maps API**: Places API 사용량에 따라 비용이 발생할 수 있습니다. [가격 정책](https://mapsplatform.google.com/pricing/) 확인 필요
-- **크롤링 속도**: 너무 빠르면 구글에서 차단할 수 있습니다.
-- **인터넷 연결**: 안정적인 인터넷 연결이 필요합니다.
-- **Chrome 브라우저**: Chrome 브라우저가 설치되어 있어야 합니다.
-- **수집 시간**: 많은 리뷰를 수집할 경우 시간이 오래 걸릴 수 있습니다.
-- **API 제한**: Google Places API는 요청 횟수 제한이 있습니다.
+### 비용 및 제한
+- **Google Maps API 비용**: Places API 사용량에 따라 비용이 발생합니다. [가격 정책](https://mapsplatform.google.com/pricing/) 확인 필요
+- **API 요청 제한**: Google Places API는 요청 횟수 제한이 있습니다. `--delay` 옵션으로 대기 시간 조정 가능
+- **수집 시간**: 59개 그리드 전체 수집 시 수 시간 소요될 수 있습니다
+
+### 기술적 요구사항
+- **안정적인 인터넷 연결**: 크롤링 중 연결이 끊기지 않도록 주의
+- **Chrome 브라우저**: Chrome 브라우저가 설치되어 있어야 합니다
+- **충분한 저장 공간**: 리뷰가 많을 경우 수 GB의 저장 공간 필요
+
+### 데이터 안정성
+- **중간 저장**: 레스토랑 수집 완료 시, 각 식당의 리뷰 수집 완료 시마다 즉시 저장되므로 중간에 오류가 발생해도 데이터 손실 최소화
+- **오류 처리**: 오류 발생 시에도 오류 정보가 JSON 파일로 저장됩니다
+- **팀원별 작업**: 여러 팀원이 동시에 다른 그리드를 처리할 수 있어 시간 절약 가능
+
+### 크롤링 주의사항
+- **크롤링 속도**: 너무 빠르면 구글에서 차단할 수 있습니다
+- **헤드리스 모드**: 백그라운드 실행 시 `--headless` 옵션 사용 권장
+- **대기 시간**: API 제한에 걸리면 `--delay` 값을 늘리세요 (기본 2초 → 3~5초)
 
 ## 문제 해결
 
