@@ -31,7 +31,7 @@
 - 이름, 주소, place_id, 평점, 리뷰 수, 전화번호 수집
 - 검색 쿼리 기반 식당 검색
 - 그리드별 자동 쿼리 생성 및 저장
-- **Grid 모드**: girdInfo.txt와 grid_tier.csv를 읽어 59개 그리드 자동 처리
+- **Grid 모드**: gridInfo.txt와 grid_tier.csv를 읽어 59개 그리드 자동 처리
 
 ### 리뷰 수집 (getReviews.py)
 - Selenium을 이용한 동적 크롤링
@@ -52,7 +52,7 @@ Crawler/
 ├── config.py                         # API 키 및 Tier별 수집 개수 설정
 ├── requirements.txt                  # 필수 패키지 목록
 ├── .env                              # 환경 변수 (API 키 저장)
-├── girdInfo.txt                      # 뉴욕시 59개 그리드 정보 (입력)
+├── gridInfo.txt                      # 뉴욕시 59개 그리드 정보 (입력)
 ├── grid_tier.csv                     # 그리드별 Tier 정보 (HOT/MID/RES) (입력)
 ├── check_tier_mapping.py             # Tier 매칭 확인 스크립트 (유틸리티)
 │
@@ -126,7 +126,7 @@ Selenium은 Chrome 브라우저를 제어하기 위해 ChromeDriver가 필요합
 #### 테스트 실행 (첫 1개 그리드만)
 
 ```bash
-python main.py --grid_file girdInfo.txt --limit 1 --max_restaurants 10 --max_reviews 20
+python main.py --grid_file gridInfo.txt --limit 1 --max_restaurants 10 --max_reviews 20
 ```
 
 이 명령은:
@@ -138,73 +138,93 @@ python main.py --grid_file girdInfo.txt --limit 1 --max_restaurants 10 --max_rev
 #### 전체 그리드 실행 - Tier 기반 자동 조정 (권장)
 
 ```bash
-python main.py --grid_file girdInfo.txt --use_tier_based_restaurants --max_reviews 50 --headless
+python main.py --grid_file gridInfo.txt --use_tier_based_restaurants --max_reviews 40 --headless
 ```
 
 이 명령은:
 - 뉴욕시 59개 그리드 전체 처리
-- **Tier에 따라 자동으로 식당 개수 조정**: HOT 지역 80개, MID 지역 50개, RES 지역 25개
+- **Tier에 따라 자동으로 식당 개수 조정**: HOT 지역 80개, MID 지역 40개, RES 지역 25개
 - 레스토랑당 최대 50개 리뷰 수집
 - 백그라운드 모드로 실행 (브라우저 창 숨김)
 
 #### 전체 그리드 실행 - 고정 개수 방식
 
 ```bash
-python main.py --grid_file girdInfo.txt --max_restaurants 30 --max_reviews 50 --headless
+python main.py --grid_file gridInfo.txt --max_restaurants 30 --max_reviews 50 --headless
 ```
 
 이 명령은:
 - 뉴욕시 59개 그리드 전체 처리
 - 모든 그리드에서 동일하게 30개 레스토랑 수집
-- 레스토랑당 최대 50개 리뷰 수집
+- 레스토랑당 최대 40개 리뷰 수집
 - 백그라운드 모드로 실행 (브라우저 창 숨김)
 
 ### 팀원별 작업 분할
 
-59개 그리드를 3명의 팀원이 나눠서 동시에 처리하는 예시:
+59개 그리드를 5명의 팀원이 나눠서 동시에 처리하는 예시:
 
 #### Tier 기반 모드 (권장)
 
-**팀원 1: 그리드 0~19 (20개)**
+**팀원 1: 그리드 0~11 (12개)**
 ```bash
-python main.py --grid_file girdInfo.txt --start_from 0 --limit 20 --use_tier_based_restaurants --max_reviews 50 --headless
+python main.py --grid_file gridInfo.txt --start_from 0 --limit 12 --use_tier_based_restaurants --max_reviews 40 --headless
 ```
 
-**팀원 2: 그리드 20~39 (20개)**
+**팀원 2: 그리드 12~23 (12개)**
 ```bash
-python main.py --grid_file girdInfo.txt --start_from 20 --limit 20 --use_tier_based_restaurants --max_reviews 50 --headless
+python main.py --grid_file gridInfo.txt --start_from 12 --limit 12 --use_tier_based_restaurants --max_reviews 40 --headless
 ```
 
-**팀원 3: 그리드 40~58 (19개)**
+**팀원 3: 그리드 24~35 (12개)**
 ```bash
-python main.py --grid_file girdInfo.txt --start_from 40 --limit 19 --use_tier_based_restaurants --max_reviews 50 --headless
+python main.py --grid_file gridInfo.txt --start_from 24 --limit 12 --use_tier_based_restaurants --max_reviews 40 --headless
+```
+
+**팀원 4: 그리드 36~47 (12개)**
+```bash
+python main.py --grid_file gridInfo.txt --start_from 36 --limit 12 --use_tier_based_restaurants --max_reviews 40 --headless
+```
+
+**팀원 5: 그리드 48~58 (11개)**
+```bash
+python main.py --grid_file gridInfo.txt --start_from 48 --limit 11 --use_tier_based_restaurants --max_reviews 40 --headless
 ```
 
 #### 고정 개수 모드
 
-**팀원 1: 그리드 0~19 (20개)**
+**팀원 1: 그리드 0~11 (12개)**
 ```bash
-python main.py --grid_file girdInfo.txt --start_from 0 --limit 20 --max_restaurants 30 --max_reviews 50 --headless
+python main.py --grid_file gridInfo.txt --start_from 0 --limit 12 --max_restaurants 30 --max_reviews 40 --headless
 ```
 
-**팀원 2: 그리드 20~39 (20개)**
+**팀원 2: 그리드 12~23 (12개)**
 ```bash
-python main.py --grid_file girdInfo.txt --start_from 20 --limit 20 --max_restaurants 30 --max_reviews 50 --headless
+python main.py --grid_file gridInfo.txt --start_from 12 --limit 12 --max_restaurants 30 --max_reviews 40 --headless
 ```
 
-**팀원 3: 그리드 40~58 (19개)**
+**팀원 3: 그리드 24~35 (12개)**
 ```bash
-python main.py --grid_file girdInfo.txt --start_from 40 --limit 19 --max_restaurants 30 --max_reviews 50 --headless
+python main.py --grid_file gridInfo.txt --start_from 24 --limit 12 --max_restaurants 30 --max_reviews 40 --headless
+```
+
+**팀원 4: 그리드 36~47 (12개)**
+```bash
+python main.py --grid_file gridInfo.txt --start_from 36 --limit 12 --max_restaurants 30 --max_reviews 40 --headless
+```
+
+**팀원 5: 그리드 48~58 (11개)**
+```bash
+python main.py --grid_file gridInfo.txt --start_from 48 --limit 11 --max_restaurants 30 --max_reviews 40 --headless
 ```
 
 ### main.py 명령어 파라미터
 
 | 파라미터 | 설명 | 기본값 | 예시 |
 |---------|------|--------|------|
-| `--grid_file` | Grid 정보 파일 경로 | girdInfo.txt | `--grid_file my_grid.txt` |
+| `--grid_file` | Grid 정보 파일 경로 | gridInfo.txt | `--grid_file my_grid.txt` |
 | `--start_from` | 시작 그리드 인덱스 | 0 | `--start_from 20` |
 | `--limit` | 처리할 그리드 수 | 전체 | `--limit 20` |
-| `--max_restaurants` | 그리드당 최대 레스토랑 수 (tier 모드가 아닐 때) | 30 | `--max_restaurants 50` |
+| `--max_restaurants` | 그리드당 최대 레스토랑 수 (tier 모드가 아닐 때) | 30 | `--max_restaurants 40` |
 | `--use_tier_based_restaurants` | Tier 기반 자동 식당 개수 조정 활성화 | False | `--use_tier_based_restaurants` |
 | `--tier_file` | Tier 정보 CSV 파일 경로 | grid_tier.csv | `--tier_file my_tier.csv` |
 | `--max_reviews` | 레스토랑당 최대 리뷰 수 | 제한 없음 | `--max_reviews 100` |
@@ -241,13 +261,13 @@ python getRestaurantsInfo.py --grid_mode
 - `--query`: 검색 쿼리 (단일 쿼리 모드에서 필수)
 - `--max_results`: 최대 식당 수 (기본값: 30, 단일 쿼리 모드)
 - `--output`: 출력 파일 경로 (기본값: restaurants.json, 단일 쿼리 모드)
-- `--grid_mode`: Grid 모드 활성화 (girdInfo.txt와 grid_tier.csv 기반 자동 처리)
+- `--grid_mode`: Grid 모드 활성화 (gridInfo.txt와 grid_tier.csv 기반 자동 처리)
 
 #### 2-2. 리뷰 수집 (getReviews.py)
 
 ```bash
 # 특정 그리드의 레스토랑 리뷰 수집
-python getReviews.py --input restaurants/restaurants_MN1.json --output_dir reviews --max_reviews 50 --headless
+python getReviews.py --input restaurants/restaurants_MN1.json --output_dir reviews --max_reviews 40 --headless
 
 # 백그라운드 실행
 python getReviews.py --input restaurants/restaurants_BX1.json --output_dir reviews --headless
@@ -265,7 +285,7 @@ python getReviews.py --input restaurants/restaurants_BX1.json --output_dir revie
 
 ### Tier 매칭 확인 (check_tier_mapping.py)
 
-grid_tier.csv와 girdInfo.txt의 매칭 상태를 확인하는 유틸리티:
+grid_tier.csv와 gridInfo.txt의 매칭 상태를 확인하는 유틸리티:
 
 ```bash
 python check_tier_mapping.py
@@ -302,7 +322,7 @@ BX2      RES    25         롱우드, 헌츠 포인트 (Longwood, Hunts Point)
 
 ## 파일 형식
 
-### 입력 파일 1: girdInfo.txt
+### 입력 파일 1: gridInfo.txt
 
 뉴욕시 59개 커뮤니티 그리드 정보:
 
@@ -413,7 +433,7 @@ Tier별 수집 개수는 `config.py`의 `TIER_RESTAURANT_COUNT`에서 조정 가
 ### 그리드 기반 파이프라인 (main.py)
 
 1. **초기화 및 설정**
-   - `girdInfo.txt` 파일을 읽어 59개 그리드 정보 파싱
+   - `gridInfo.txt` 파일을 읽어 59개 그리드 정보 파싱
    - `--use_tier_based_restaurants` 옵션이 있으면 `grid_tier.csv`에서 Tier 정보 로드
    - `--start_from`, `--limit` 옵션에 따라 처리할 그리드 범위 결정
 

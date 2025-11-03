@@ -9,15 +9,21 @@ Google Maps 식당 정보 및 리뷰 수집 전체 파이프라인 (Grid 기반)
     # 기존 방식: 모든 그리드에 동일한 식당 개수
     python main.py --grid_file girdInfo.txt --max_restaurants 30 --max_reviews 50 --headless
 
-    # Tier 기반 모드로 팀원별 작업 분할 (59개 그리드를 3명이 나눠서 작업)
-    # 팀원 1: 그리드 0~19
-    python main.py --grid_file girdInfo.txt --start_from 0 --limit 20 --use_tier_based_restaurants --max_reviews 50 --headless
+    # Tier 기반 모드로 팀원별 작업 분할 (59개 그리드를 5명이 나눠서 작업)
+    # 팀원 1: 그리드 0~11 (12개)
+    python main.py --grid_file girdInfo.txt --start_from 0 --limit 12 --use_tier_based_restaurants --max_reviews 50 --headless
 
-    # 팀원 2: 그리드 20~39
-    python main.py --grid_file girdInfo.txt --start_from 20 --limit 20 --use_tier_based_restaurants --max_reviews 50 --headless
+    # 팀원 2: 그리드 12~23 (12개)
+    python main.py --grid_file girdInfo.txt --start_from 12 --limit 12 --use_tier_based_restaurants --max_reviews 50 --headless
 
-    # 팀원 3: 그리드 40~58
-    python main.py --grid_file girdInfo.txt --start_from 40 --limit 19 --use_tier_based_restaurants --max_reviews 50 --headless
+    # 팀원 3: 그리드 24~35 (12개)
+    python main.py --grid_file girdInfo.txt --start_from 24 --limit 12 --use_tier_based_restaurants --max_reviews 50 --headless
+
+    # 팀원 4: 그리드 36~47 (12개)
+    python main.py --grid_file girdInfo.txt --start_from 36 --limit 12 --use_tier_based_restaurants --max_reviews 50 --headless
+
+    # 팀원 5: 그리드 48~58 (11개)
+    python main.py --grid_file girdInfo.txt --start_from 48 --limit 11 --use_tier_based_restaurants --max_reviews 50 --headless
 
     # 특정 그리드만 테스트
     python main.py --grid_file girdInfo.txt --limit 1 --max_restaurants 10 --max_reviews 20
@@ -399,18 +405,21 @@ def main():
   # Tier 기반 자동 조정 모드로 전체 그리드 실행 ({tier_info_text})
   python main.py --grid_file girdInfo.txt --use_tier_based_restaurants --max_reviews 50 --headless
 
-  # 기존 방식: 모든 그리드에 동일한 식당 개수
-  python main.py --grid_file girdInfo.txt --max_restaurants 30 --max_reviews 50 --headless
+  # Tier 기반 모드로 팀원별 작업 분할 (59개 그리드를 5명이 나눠서 작업)
+  # 팀원 1: 그리드 0~11 (12개)
+  python main.py --grid_file girdInfo.txt --start_from 0 --limit 12 --use_tier_based_restaurants --max_reviews 40 --headless
 
-  # Tier 기반 모드로 팀원별 작업 분할 (59개 그리드를 3명이 나눠서 작업)
-  # 팀원 1: 그리드 0~19
-  python main.py --grid_file girdInfo.txt --start_from 0 --limit 20 --use_tier_based_restaurants --max_reviews 50 --headless
+  # 팀원 2: 그리드 12~23 (12개)
+  python main.py --grid_file girdInfo.txt --start_from 12 --limit 12 --use_tier_based_restaurants --max_reviews 40 --headless
 
-  # 팀원 2: 그리드 20~39
-  python main.py --grid_file girdInfo.txt --start_from 20 --limit 20 --use_tier_based_restaurants --max_reviews 50 --headless
+  # 팀원 3: 그리드 24~35 (12개)
+  python main.py --grid_file girdInfo.txt --start_from 24 --limit 12 --use_tier_based_restaurants --max_reviews 40 --headless
 
-  # 팀원 3: 그리드 40~58
-  python main.py --grid_file girdInfo.txt --start_from 40 --limit 19 --use_tier_based_restaurants --max_reviews 50 --headless
+  # 팀원 4: 그리드 36~47 (12개)
+  python main.py --grid_file girdInfo.txt --start_from 36 --limit 12 --use_tier_based_restaurants --max_reviews 40 --headless
+
+  # 팀원 5: 그리드 48~58 (11개)
+  python main.py --grid_file girdInfo.txt --start_from 48 --limit 11 --use_tier_based_restaurants --max_reviews 40 --headless
 
   # 특정 그리드만 테스트
   python main.py --grid_file girdInfo.txt --limit 1 --max_restaurants 10 --max_reviews 20
