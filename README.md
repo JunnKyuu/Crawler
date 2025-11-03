@@ -46,7 +46,6 @@ Crawler/
 ├── main.py                           # 그리드 기반 전체 파이프라인 (메인 스크립트)
 ├── getRestaurantsInfo.py             # 식당 정보 수집 유틸리티
 ├── getReviews.py                     # 리뷰 수집 유틸리티
-├── collect_restaurants_by_grid.py    # (사용 안 함, main.py가 대체)
 ├── config.py                         # API 키 설정
 ├── requirements.txt                  # 필수 패키지 목록
 ├── .env                              # 환경 변수 (API 키 저장)

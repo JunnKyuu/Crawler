@@ -92,9 +92,8 @@ class GridBasedPipelineRunner:
                 command,
                 check=True,
                 text=True,
-                capture_output=False,
-                timeout=600  # 10분 타임아웃
-            )
+                capture_output=False
+            )            
             print(f"\n✓ {description} 완료")
             return True
         except subprocess.CalledProcessError as e:

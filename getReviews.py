@@ -77,6 +77,38 @@ class GoogleMapsReviewCrawler:
         except (TimeoutException, NoSuchElementException):
             print("정렬 옵션을 찾을 수 없습니다. 기본 정렬로 진행합니다.")
 
+    def sort_by_relevance(self):
+        """리뷰를 관련성순으로 정렬"""
+        try:
+            # 정렬 버튼 찾기
+            sort_button = WebDriverWait(self.driver, 5).until(
+                EC.element_to_be_clickable((By.XPATH, "//button[@aria-label='리뷰 정렬' or contains(@data-value, '정렬')]"))
+            )
+            sort_button.click()
+            time.sleep(1)
+
+            # 관련성순 옵션 클릭
+            relevance_option = WebDriverWait(self.driver, 5).until(
+                EC.element_to_be_clickable((By.XPATH, "//div[@role='menuitemradio' and contains(.//div, '관련성순')]"))
+            )
+            relevance_option.click()
+            time.sleep(2)
+            print("관련성순 정렬 완료")
+        except (TimeoutException, NoSuchElementException):
+            print("정렬 옵션을 찾을 수 없습니다. 기본 정렬로 진행합니다.")
+
+    def extract_review_id(self, review_element):
+        """리뷰 ID 추출 (중복 체크용)"""
+        try:
+            # data-review-id 속성이 있는 요소 찾기 (버튼들)
+            elements_with_id = review_element.find_elements(By.CSS_SELECTOR, "[data-review-id]")
+            if elements_with_id:
+                review_id = elements_with_id[0].get_attribute("data-review-id")
+                return review_id
+        except (NoSuchElementException, AttributeError):
+            pass
+        return None
+
     def extract_rating(self, review_element):
         """별점 추출"""
         try:
@@ -160,10 +192,16 @@ class GoogleMapsReviewCrawler:
                 break
             last_height = new_height
 
-    def crawl_reviews(self, place_id, restaurant_name):
-        """특정 장소의 리뷰 크롤링"""
+    def crawl_reviews_by_sort(self, place_id, restaurant_name, sort_method='newest'):
+        """특정 장소의 리뷰를 특정 정렬 방식으로 크롤링
+
+        Args:
+            place_id: 장소 ID
+            restaurant_name: 식당 이름
+            sort_method: 정렬 방식 ('newest' 또는 'relevance')
+        """
         url = self.get_reviews_url(place_id)
-        print(f"\n크롤링 시작: {restaurant_name}")
+        print(f"\n크롤링 시작: {restaurant_name} ({sort_method})")
         print(f"URL: {url}")
 
         self.driver.get(url)
@@ -173,8 +211,13 @@ class GoogleMapsReviewCrawler:
         if not self.click_reviews_tab():
             return []
 
-        # 최신순 정렬
-        self.sort_by_newest()
+        # 정렬 방식 선택
+        if sort_method == 'newest':
+            self.sort_by_newest()
+        elif sort_method == 'relevance':
+            self.sort_by_relevance()
+        else:
+            print(f"알 수 없는 정렬 방식: {sort_method}, 기본 정렬 사용")
 
         # 스크롤 가능한 div 찾기 (리뷰 섹션의 실제 스크롤 컨테이너)
         try:
@@ -211,12 +254,14 @@ class GoogleMapsReviewCrawler:
                     self.click_expand_buttons(review_element)
 
                     # 리뷰 데이터 추출
+                    review_id = self.extract_review_id(review_element)
                     rating = self.extract_rating(review_element)
                     date = self.extract_date(review_element)
                     text, lang = self.extract_review_text_and_lang(review_element)
 
                     if text:  # 텍스트가 있는 경우만 저장
                         review_data = {
+                            "review_id": review_id,
                             "rating": rating,
                             "date": date,
                             "text": text,
@@ -240,6 +285,65 @@ class GoogleMapsReviewCrawler:
 
         print(f"총 {len(reviews)}개의 리뷰를 수집했습니다.")
         return reviews
+
+    def crawl_reviews(self, place_id, restaurant_name):
+        """특정 장소의 리뷰를 최신순과 관련성순으로 모두 크롤링하고 중복 제거
+
+        Args:
+            place_id: 장소 ID
+            restaurant_name: 식당 이름
+
+        Returns:
+            중복이 제거된 리뷰 리스트
+        """
+        print(f"\n{'='*60}")
+        print(f"리뷰 크롤링 시작: {restaurant_name}")
+        print(f"목표 리뷰 수: 최신순 {self.max_reviews}개 + 관련성순 {self.max_reviews}개")
+        print(f"{'='*60}")
+
+        # 1. 최신순으로 크롤링
+        print("\n[1단계] 최신순 크롤링 시작...")
+        newest_reviews = self.crawl_reviews_by_sort(place_id, restaurant_name, 'newest')
+        print(f"[1단계] 최신순 크롤링 완료: {len(newest_reviews)}개")
+
+        # 2. 관련성순으로 크롤링
+        print("\n[2단계] 관련성순 크롤링 시작...")
+        relevance_reviews = self.crawl_reviews_by_sort(place_id, restaurant_name, 'relevance')
+        print(f"[2단계] 관련성순 크롤링 완료: {len(relevance_reviews)}개")
+
+        # 3. 중복 제거
+        print("\n[3단계] 중복 제거 시작...")
+        all_reviews = newest_reviews + relevance_reviews
+
+        # review_id 기반으로 중복 제거
+        seen_ids = set()
+        unique_reviews = []
+        duplicate_count = 0
+
+        for review in all_reviews:
+            review_id = review.get('review_id')
+            if review_id:
+                # review_id가 있는 경우, ID로 중복 체크
+                if review_id not in seen_ids:
+                    seen_ids.add(review_id)
+                    unique_reviews.append(review)
+                else:
+                    duplicate_count += 1
+            else:
+                # review_id가 없는 경우, 텍스트+날짜 조합으로 중복 체크
+                text_date_key = f"{review.get('text')}_{review.get('date')}"
+                if text_date_key not in seen_ids:
+                    seen_ids.add(text_date_key)
+                    unique_reviews.append(review)
+                else:
+                    duplicate_count += 1
+
+        print(f"[3단계] 중복 제거 완료: {duplicate_count}개 제거됨")
+        print(f"\n{'='*60}")
+        print(f"최종 결과: 총 {len(unique_reviews)}개의 고유 리뷰 (중복 {duplicate_count}개 제거)")
+        print(f"{'='*60}\n")
+
+        return unique_reviews
 
     def crawl_all_restaurants(self, restaurants_file, output_dir='reviews'):
         """restaurants.json 파일의 모든 식당 리뷰 크롤링 및 개별 저장"""
