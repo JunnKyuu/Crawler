@@ -211,5 +211,5 @@ __marimo__/
 /log/*
 
 # data 
-/restaurants/*
-/reviews/*
+# /restaurants/*
+# /reviews/*
